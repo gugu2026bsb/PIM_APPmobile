@@ -1,0 +1,204 @@
+{
+  "app_name": "BarbeariaShop",
+  "personality": "6 Glass / Luxe",
+  "personality_one_liner": "A cinematic, expensive, and classic barbershop experience driven by dark midnight tones, wood textures, and antique gold accents.",
+  "color": {
+    "surface": "#141414",
+    "onSurface": "#F4EFEA",
+    "surfaceSecondary": "#1E1C1A",
+    "onSurfaceSecondary": "#F4EFEA",
+    "surfaceTertiary": "#2A2724",
+    "onSurfaceTertiary": "#E0D7CD",
+    "surfaceInverse": "#F4EFEA",
+    "onSurfaceInverse": "#141414",
+    "brand": "#D4AF37",
+    "onBrand": "#141414",
+    "brandPrimary": "#C5A028",
+    "onBrandPrimary": "#141414",
+    "brandSecondary": "#E1C671",
+    "onBrandSecondary": "#141414",
+    "brandTertiary": "#3D331A",
+    "onBrandTertiary": "#E1C671",
+    "success": "#3A5A40",
+    "onSuccess": "#D5E0D5",
+    "warning": "#9C6A24",
+    "onWarning": "#FDECC8",
+    "error": "#7A2A2A",
+    "onError": "#F2D5D5",
+    "info": "#2A4B5C",
+    "onInfo": "#D5E6F2",
+    "border": "#36322E",
+    "borderStrong": "#4F4943",
+    "divider": "#25221F",
+    "muted": "#968F88"
+  },
+  "typography": {
+    "displayFontFamily": "Cormorant Garamond",
+    "textFontFamily": "Switzer",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous luxury spacing. Elements must breathe. No cramped list items or grids.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 4,
+    "md": 8,
+    "lg": 16,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Ionicons",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use for sticky headers over scrolling content",
+      "Use for bottom tab bar",
+      "Use for hero/featured cards as a frosted overlay on photo backdrops",
+      "Ensure translucent tinted base underneath foreground content for readability (≥75% of surface opacity)"
+    ],
+    "dont's": [
+      "Never apply glass to form fields, body text regions, or the entire screen",
+      "Don't stack more than 2 blur surfaces per screen"
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Auth (Login/Register)",
+      "purpose": "Secure JWT authentication entry point for clients, barbers, and admins.",
+      "states": {
+        "loading": "Centered gold spinner",
+        "empty": "N/A",
+        "error": "Readable toast message + Retry"
+      },
+      "layout": "Full-bleed background image with heavy dark gradient scrim. Clean input fields (surfaceTertiary) with labels above. Dominant gold primary CTA at the bottom."
+    },
+    {
+      "name": "Home (Client)",
+      "purpose": "Launchpad for booking, displaying upcoming appointments, top barbers, and featured services.",
+      "states": {
+        "loading": "Skeleton loaders for cards",
+        "empty": "N/A",
+        "error": "Failed to load feed + Retry button"
+      },
+      "layout": "Sticky glass header. Large 'Next Appointment' widget if booked. Horizontal scroll for 'Top Barbers' (glass cards with photos). Quick access grid for services. Dominant sticky CTA 'Book Appointment'."
+    },
+    {
+      "name": "Service & Product Catalog",
+      "purpose": "List available cuts/services (price, duration) and products (beard oils, etc).",
+      "states": {
+        "loading": "Skeleton list",
+        "empty": "Illustration of empty vintage tools + 'No items available' + CTA",
+        "error": "Failed to load catalog + Retry"
+      },
+      "layout": "Vertical list view. Image on left, details and tabular-lined price on right. Use surfaceSecondary for list items with divider. Sticky cart/book CTA at bottom if items are selected."
+    },
+    {
+      "name": "Barber Profiles & Gallery",
+      "purpose": "Showcase a barber's specialties, ratings, and portfolio of previous cuts.",
+      "states": {
+        "loading": "Spinner",
+        "empty": "No gallery photos yet",
+        "error": "Error loading profile + Retry"
+      },
+      "layout": "Hero image banner (barber cutting hair) with gradient scrim and glassmorphism back button. Barber name in Cormorant Garamond. Tabs for 'About', 'Services', and 'Gallery' (2-column masonry or grid). Sticky 'Book Barber' CTA at bottom."
+    },
+    {
+      "name": "Booking Flow",
+      "purpose": "Step-by-step appointment scheduling (Service -> Barber -> Date/Time).",
+      "states": {
+        "loading": "Spinner on slot validation",
+        "empty": "No slots available for this date",
+        "error": "Booking failed + Retry"
+      },
+      "layout": "Progress indicator at top. Clean lists for selection. Calendar picker with clear disabled states. Available time slots as pills (brandTertiary for unselected, brandPrimary for selected). Sticky 'Continue/Confirm' CTA at bottom."
+    },
+    {
+      "name": "My Appointments",
+      "purpose": "History and upcoming schedules for the logged-in user.",
+      "states": {
+        "loading": "Skeleton cards",
+        "empty": "Vintage chair icon + 'No upcoming appointments' + 'Book Now' CTA",
+        "error": "Failed to fetch appointments + Retry"
+      },
+      "layout": "Segmented control (glassmorphism) for 'Upcoming' vs 'Past'. Stacked cards showing date, time, barber, service, and status badge."
+    },
+    {
+      "name": "Barber Agenda View",
+      "purpose": "Barber-specific dashboard to view today's schedule and update statuses.",
+      "states": {
+        "loading": "Spinner",
+        "empty": "'No appointments today' + Relax illustration",
+        "error": "Sync error + Retry"
+      },
+      "layout": "Timeline or vertical list of the day's appointments. High contrast typography for times. Swipe actions or tap to open bottom sheet to update status (Completed, No-show)."
+    },
+    {
+      "name": "Admin Dashboard",
+      "purpose": "Manage barbers, services, products, schedules, and global appointments.",
+      "states": {
+        "loading": "Skeleton metrics",
+        "empty": "N/A",
+        "error": "Failed to load dashboard + Retry"
+      },
+      "layout": "Top-level metric widgets (Revenue, Total Appointments). Grid of management modules (Manage Barbers, Manage Services, etc.). Utility-focused but maintains luxe aesthetic using brandTertiary tints."
+    }
+  ],
+  "images": {
+    "hero_barbershop_interior": {
+      "url": "https://images.unsplash.com/photo-1536520002442-39764a41e987?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Njl8MHwxfHNlYXJjaHwxfHxiYXJiZXJzaG9wJTIwaW50ZXJpb3IlMjBkYXJrJTIwd29vZHxlbnwwfHx8fDE3OTMzMTM0MTR8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "salon interior with lighted pendant lamps"
+    },
+    "mens_haircut_fade": {
+      "url": "https://images.unsplash.com/photo-1630827020718-3433092696e7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzR8MHwxfHNlYXJjaHwxfHxtZW5zJTIwaGFpcmN1dCUyMGZhZGV8ZW58MHx8fHwxNzkzMzEzNDE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Profile view of a man with a thick beard and dark hair"
+    },
+    "barber_cutting_hair": {
+      "url": "https://images.unsplash.com/photo-1647140655214-e4a2d914971f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1OTV8MHwxfHNlYXJjaHwxfHxiYXJiZXIlMjBjdXR0aW5nJTIwaGFpcnxlbnwwfHx8fDE3OTMzMTM0MTR8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "a man cutting another mans hair with a pair of scissors"
+    },
+    "beard_oil_product": {
+      "url": "https://images.unsplash.com/photo-1620018646973-e3e257a1002c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDN8MHwxfHNlYXJjaHwxfHxiZWFyZCUyMG9pbCUyMHByb2R1Y3R8ZW58MHx8fHwxNzkzMzEzNDE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "man holding black glass bottle"
+    },
+    "vintage_barber_tools": {
+      "url": "https://images.unsplash.com/photo-1599351431613-18ef1fdd27e1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwxfHx2aW50YWdlJTIwYmFyYmVyJTIwdG9vbHN8ZW58MHx8fHwxNzkzMzEzNDE0fDA&ixlib=rb-4.1.0&q=85",
+      "alt": "yellow and black truck scale model"
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the 6 Glass / Luxe personality. Maintain a dark, cinematic, and expensive mood using the midnight black (`surface`) and antique gold (`brandPrimary`) palette.",
+    "Typography: Use 'Cormorant Garamond' exclusively for display headings/titles to establish authority. Use 'Switzer' for all body text, labels, and booking metrics.",
+    "Text Over Images: ALWAYS implement a vertical gradient scrim (transparent -> ≥70% surfaceInverse) whenever text is placed over imagery (e.g., Barber profile banners, Auth background).",
+    "Sticky CTAs: For screens with scrolling content and a primary action (e.g., Booking Flow, Home), wrap the primary 'Book'/'Continue' CTA in a sticky fixed container at the bottom with safe-area clearance and a glassmorphism/gradient background.",
+    "Glassmorphism: Apply `expo-blur` heavily on bottom tab bars, sticky headers, and featured cards. Ensure the background behind glass has a minimum 75% surface tint so foreground text is readable.",
+    "Haptics: Wire haptics directly to primary button presses, tab changes, and time-slot selections in the booking flow. Ensure they are serialized in the components.",
+    "Layouts: Treat the home screen as a launchpad, not a poster. A dominant CTA and availability indicators must be instantly visible. Avoid dense dashboard clutter for clients.",
+    "Icons: Stick to 'Ionicons', consistently outlined or consistently filled per screen."
+  ]
+}

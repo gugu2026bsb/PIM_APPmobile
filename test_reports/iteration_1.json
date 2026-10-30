@@ -1,0 +1,57 @@
+{
+  "summary": "First full test run of BarbeariaShop (Expo + FastAPI). Backend: 13 pytest cases (auth, CRUD x3 with RBAC, horarios, agendamentos conflict/permissions, admin users/role/stats, barbeiro own-agenda). 12/13 pass; the failure is a business-rule gap: bookings with past dates are accepted. Frontend (390x844): login (incl. error), registro (validation, duplicate e-mail, success), home (hero/barbeiros/servicos), Catálogo segment Serviços/Produtos, full /booking flow -> success alert -> Agenda, cliente cancel -> Histórico, profile/logout, admin dashboard stats, Serviços CRUD create/edit/delete, Usuários promote to barbeiro (prompt), barbeiro login sees only own agenda and confirms, /barbeiro/[id] -> booking with preselected barbeiro. All of these worked. Found one bug and fixed it: after DELETE the item stayed in the admin CRUD list (204 response parse error in apiFetch). Galeria and lembretes (both chosen by the user) are not implemented. Deprecated packages detected: none. SafeAreaView issues detected: none (uses react-native-safe-area-context insets).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/agendamentos", "issue": "Accepts bookings for past dates (e.g. 2020-01-01) and for time slots earlier today. Should return 400."},
+      {"endpoint": "POST /api/agendamentos", "issue": "The conflict check only looks at exact horario. duracao_minutos is ignored, so a 60-min 'Corte + Barba' at 10:00 does not block 10:30. Two requests arriving at the same moment can also double-book, because there is no unique partial index on (barbeiro_id, data, horario) for non-cancelled bookings."},
+      {"endpoint": "POST /api/agendamentos, GET /api/horarios", "issue": "Barbeiro status is not checked, so 'Inativo' barbers can still be booked. /horarios does not validate that barbeiro_id exists."},
+      {"endpoint": "PATCH /api/agendamentos/{id}/status", "issue": "There are no state-transition rules. A cliente can cancel a 'Realizado' booking. Admin/barbeiro can move 'Cancelado' -> 'Realizado'/'Confirmado' without re-checking for slot conflicts, so a re-activated booking can collide with a newer booking in the same slot."},
+      {"endpoint": "PATCH /api/admin/users/{id}/role", "issue": "barbeiro_id is not validated. Role 'barbeiro' without barbeiro_id is accepted, leaving the user with an empty agenda. The stale barbeiro_id is not unset when the user is demoted. An admin can demote themselves."},
+      {"endpoint": "DELETE /api/barbeiros/{id}, /api/servicos/{id}", "issue": "Deleting leaves orphan agendamentos, which keep showing the deleted barber name."},
+      {"endpoint": "DELETE endpoints (204)", "issue": "The response carries content-type: application/json with an empty body. This broke the frontend JSON parse; the frontend is fixed now, but the header is still wrong."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "CrudScreen delete", "issue": "FIXED: after deleting, the row stayed in the list. Cause: apiFetch called res.json() on an empty 204 body, the mutation threw, and since deleteMut has no onError the failure was silent and the list was never refreshed.", "testID": "crud-delete-{id}", "priority": "HIGH"},
+      {"component": "CrudScreen number fields", "issue": "Uses parseFloat. Typing 'abc' sends null and the user sees the raw pydantic JSON in an alert. A Brazilian decimal like '25,50' is saved as 25. An empty duracao/estoque is saved as 0 (a new service showed '0 min').", "testID": "crud-field-preco", "priority": "MEDIUM"},
+      {"component": "Agenda status change (web)", "issue": "window.confirm only offers options[0]. Admin/barbeiro can never cancel a Pendente booking or mark it Realizado directly on web. Also, updateStatus and setRole have no onError, so failures are silent.", "testID": "ag-row-{id}", "priority": "MEDIUM"},
+      {"component": "booking.tsx nextDays", "issue": "The ISO date comes from toISOString() (UTC) but the label from local getDate(). In Brazil (UTC-3) after 21:00 the chip shows today while booking tomorrow. Past slots for today are also shown as available.", "testID": "booking-day-*", "priority": "MEDIUM"},
+      {"component": "Agenda list ordering", "issue": "Próximos for cliente comes from /agendamentos/me sorted descending, so the farthest booking is listed first (01/11 above 30/10). Upcoming should sort ascending. The 'today' filter also uses UTC.", "testID": "filter-upcoming", "priority": "LOW"},
+      {"component": "Auth guard", "issue": "/booking and /barbeiro/[id] open while logged out (no redirect). Only /admin is guarded.", "testID": "booking-confirm", "priority": "LOW"},
+      {"component": "Register error", "issue": "The 'E-mail já cadastrado' error stays visible after the user edits the fields.", "testID": "register-error", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Login", "issues": ["The admin credentials 'Admin padrão: admin@barbearia.com / Admin@12345' are printed on the public login screen (security). Remove for production."]},
+      {"screen": "Booking", "issues": ["Slot pills are 38px tall, below the 44px touch-target minimum."]},
+      {"screen": "Catálogo Produtos", "issues": ["Seed images for 'Pomada Modeladora Matte' (photo-1595425964377-ec7d7a5fcff5) and 'Shampoo Masculino' (photo-1570194065650-d99fb4bedf0a) return 404 from Unsplash, so empty placeholders show."]},
+      {"screen": "Admin CRUD form", "issues": ["Inline form has no KeyboardAvoidingView/ScrollView. On a device the keyboard may hide the lower fields and the Save button."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_barbearia_api.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Implement the missing user-selected features: Galeria (photo gallery) and Lembretes (reminders, e.g. expo-notifications local reminder before the appointment).",
+    "Backend: reject past date/time bookings. Block bookings for Inativo barbers. Account for servico duracao_minutos in conflict and slot availability. Add a unique partial index to prevent double-booking under concurrency.",
+    "Backend: add status-transition rules (no cancelling Realizado; re-check conflicts when re-activating a Cancelado booking).",
+    "Backend: validate barbeiro_id in role update, unset it on demotion, and prevent an admin from demoting themselves.",
+    "Frontend: on web, let the user pick between all status options (e.g. buttons in a custom modal instead of window.confirm). Add onError to updateStatus/setRole/deleteMut.",
+    "Frontend: CrudScreen numeric parsing should accept ',' decimals, use defaults for empty fields, and validate before submit.",
+    "Frontend: build booking dates from local date components instead of toISOString. Hide or disable past slots for today. Sort upcoming ascending.",
+    "Remove the admin credentials hint from login.tsx. Replace the 2 broken product image URLs. Make slot pills at least 44px tall. Add auth redirect for /booking."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 790 lines; split it into routers/models/seed modules.",
+    "/api/agendamentos/me and the cliente branch of /api/agendamentos return the same data with opposite sort orders.",
+    "Barbeiro chips in booking show only the first name; ambiguous if two barbers share it."
+  ],
+  "updated_files": ["/app/frontend/src/api.ts (safe parse of empty/204 responses)", "/app/backend/tests/test_barbearia_api.py (new)"],
+  "success_rate": {"backend": "92% (12/13)", "frontend": "95% (all core flows pass after the delete fix)"},
+  "seed_data_creation": "Test users/servicos/agendamentos were created with TEST_/test_ prefixes and cleaned up afterwards. Cliente's existing 2026-10-30 10:00 booking was reset to Pendente.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login is form-urlencoded. Server and browser clocks are in UTC (date shows 2026-10-29). Slots are 09:00-11:30 and 13:00-18:30, 18 in total, with a lunch gap. Web uses window.confirm/prompt; the prompt in usuarios takes a number (3 = Barbeiro: first barbeiro). Use get_by_role('tab') or [role=tab] has_text for tab navigation, because 'Perfil' text is duplicated. Run pytest with EXPO_PUBLIC_BACKEND_URL exported from frontend/.env.",
+  "rca_of_issue": "Admin delete not refreshing list: FastAPI 204 responses carry content-type application/json with an empty body. apiFetch called res.json() and threw 'Unexpected end of JSON input', so deleteMut failed (no onError, silent) and the query was never invalidated even though the server deleted the record. Fix: apiFetch now reads text and only JSON.parses non-empty bodies (returns '' for 204). Verified in the UI: the row disappears after delete."
+}

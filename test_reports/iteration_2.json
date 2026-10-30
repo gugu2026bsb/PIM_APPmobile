@@ -1,0 +1,48 @@
+{
+  "summary": "Iteration 2 retest of the iteration_1 fixes. Backend: 30/31 pytest pass (13 existing + 17 new in test_iteration2_fixes.py with 1 failure). These all work: past-date booking returns 400, inactive barber returns 400, duration-aware 409 conflicts, /horarios with servico_id, rebooking after a cancel (the partial index works), status transitions where Realizado and Cancelado are final, cliente can only cancel own bookings, role validation, clearing barbeiro_id on demotion, admin self-demote blocked, delete with active bookings returns 409, /agendamentos/me sorted ascending, barbeiros galeria, product images return 200. One real bug: slot_span ignores the lunch gap. Frontend (390x844 web preview): all requested flows were checked and pass. No deprecated Expo packages were found and there are no window.confirm or prompt calls.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/horarios + POST /api/agendamentos", "issue": "slot_span() takes the next entries of DEFAULT_SLOTS, so a 60-min service at 11:30 spans [11:30, 13:00]. The service runs into the lunch break (12:00-13:00), and the 11:30 slot is offered as available. It also wrongly blocks 13:00. Reproduce: GET /api/horarios?servico_id=<60min> returns 11:30 disponivel=true. Fix: build the span from real times (start + k*30min) and require each one to be in DEFAULT_SLOTS. Reference: server.py:635-641"},
+      {"endpoint": "AgendamentoOut", "issue": "duracao_minutos is stored in the DB but missing from the response model, so the frontend cannot show the booking duration or end time."},
+      {"endpoint": "BarbeiroIn.status / ServicoIn.preco / ProdutoIn", "issue": "status is a free string (no Literal['Ativo','Inativo']). preco, estoque and duracao_minutos accept negative values (no Field(ge=0) / gt=0)."},
+      {"endpoint": "uniq_active_slot index", "issue": "The index only guards the start slot. Two concurrent overlapping multi-slot bookings (for example 14:00/60min and 14:30) can still race past the occupied_slots check. Low risk."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Home reminder", "issue": "nextAg uses a.data >= today with no time check. A Pendente booking from earlier today (for example 09:00 when it is now 20:00) still shows 'seu horário é hoje às 09:00'.", "testID": "home-reminder", "priority": "low"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Global", "issues": ["Prices use toFixed(2) with a dot ('R$ 45.00', 'R$ 25.50'). The pt-BR format is 'R$ 45,00' (use toLocaleString('pt-BR', {style:'currency', currency:'BRL'})). Affects booking.tsx:119,207, admin/servicos.tsx:16, admin/produtos.tsx:16, admin/index.tsx:41 and the catalog."]},
+      {"screen": "Booking", "issues": ["The slot grid uses 3 fixed-width 76px chips and leaves empty space on the right at 375px. Use 4 columns or flex-basis so the grid fills the width."]},
+      {"screen": "CrudScreen modal", "issues": ["Titles use the plural: 'Editar Barbeiros' / 'Novo — Serviços'. Pass a singular label."]},
+      {"screen": "Barbeiro galeria preview", "issues": ["The fullscreen preview has no visible close (X) button and closes only on tap."]},
+      {"screen": "Toast", "issues": ["The toast covers the screen header and title ('Meus Agendamentos') for about 2s. Acceptable, but consider offsetting it below the header."]},
+      {"screen": "Produtos", "issues": ["The Pomada and Shampoo images show barber tools, not the products. Low priority."]}
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_iteration2_fixes.py", "/app/backend/tests/test_barbearia_api.py", "/app/backend/tests/cleanup_test_data.py", "/app/test_reports/pytest/pytest_results_iter2.xml"],
+  "action_items": [
+    "Fix slot_span to respect the lunch gap: a service must not span non-contiguous slots (11:30 + 60min must be unavailable and rejected with 400).",
+    "Add duracao_minutos to AgendamentoOut.",
+    "Add Pydantic constraints: status Literal['Ativo','Inativo'], preco/estoque/duracao >= 0.",
+    "Format currency in pt-BR (R$ 45,00) across the app.",
+    "Home reminder: exclude bookings from today whose time has already passed.",
+    "Optional: singular titles in the CRUD modal, close button on the galeria preview, a slot grid that fills the width."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 886 lines (over 700). Consider splitting the routers (auth, catalog, agendamentos, admin).",
+    "Hooks order in booking.tsx and barbeiro/[id].tsx is correct (all hooks run before the Redirect early-return).",
+    "CrudScreen uses KeyboardAwareScrollView inside the Modal, so keyboard handling is OK."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration2_fixes.py (new)", "/app/backend/tests/cleanup_test_data.py (new)"],
+  "success_rate": {"backend": "97% (30/31)", "frontend": "100% of requested flows (minor UX/design issues only)"},
+  "seed_data_creation": "None kept. TEST_ barbeiros/servicos, test_* users and their bookings were all deleted from MongoDB after the run.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest with EXPO_PUBLIC_BACKEND_URL exported and the default xdist (a full-suite '-n 0' run timed out once; test_iteration2_fixes.py alone with -n 0 runs in about 9s). Server TZ is UTC; the backend uses America/Sao_Paulo. In Playwright, use normal click() with scroll_into_view_if_needed for booking-day chips inside the horizontal ScrollView, because force=True clicks did not register. Day chips and slots render only after a servico and a barbeiro are selected. Agenda rows open the options-sheet on tap. The admin's own row in usuarios is disabled. If a test run is killed, run tests/cleanup_test_data.py.",
+  "rca_of_issue": "Lunch-gap bug: DEFAULT_SLOTS lists 11:30 then 13:00, and slot_span slices DEFAULT_SLOTS[i:i+n], treating them as contiguous. Mitigation: compute the needed times as start + 30*k minutes and check membership in DEFAULT_SLOTS."
+}
